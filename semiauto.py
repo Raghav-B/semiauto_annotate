@@ -18,7 +18,7 @@ def get_session():
 keras.backend.tensorflow_backend.set_session(get_session())
 
 # Can change this to change the model used for inferencing
-model_path = "semitrained_models/*.h5"
+model_path = "semitrained_models/resnet50_csv_15.h5"
 model = models.load_model(model_path, backbone_name="resnet50")
 # Strings associated with each label index
 labels_to_names = {0: "bike", 1: "non-bike"}
@@ -31,8 +31,9 @@ images_to_label_png = glob.glob("input_imgs/*.png")
 images_to_label.extend(images_to_label_png)
 
 # Iterate through all input images and run inference on them
+cur_image = 0
 for image_path in images_to_label:
-    image_name = os.path.basename(image)
+    image_name = os.path.basename(image_path)
     image = cv2.imread(image_path)
 
     # Padding image to make it square
@@ -114,30 +115,27 @@ for image_path in images_to_label:
 
         bndbox = ET.Element("bndbox")
         xmin = ET.Element("xmin")
-        xmin.text = str(box[0])
+        xmin.text = str(int(box[0]))
         bndbox.append(xmin)
         ymin = ET.Element("ymin")
-        ymin.text = str(box[1])
+        ymin.text = str(int(box[1]))
         bndbox.append(ymin)
         xmax = ET.Element("xmax")
-        xmax.text = str(box[2])
+        xmax.text = str(int(box[2]))
         bndbox.append(xmax)
         ymax = ET.Element("ymax")
-        ymax.text = str(box[3])
+        ymax.text = str(int(box[3]))
         bndbox.append(ymax)
         obj.append(bndbox)
 
         xml_obj.append(obj)
 
     # Saving image with detections
-    cur_image += 1
     cv2.imwrite(output_path + "/" + image_name, og_image)
-    output_str = ET.tostring(xml_obj)
+    temp = ET.ElementTree(xml_obj)
+    temp.write(open(output_path + "/" + image_name[:-4] + ".xml", "w+"), encoding='unicode')
 
-    xml_file = open(output_path + "/" + image_name[:-3] + ".xml", "w+")
-    xml_file.write(output_str)    
-    xml_file.close()
-
+    cur_image += 1
     print("Annotated " + str(cur_image) + " out of " + str(len(images_to_label)) + " images.")
 
 print("Semiauto annotations completed.")
